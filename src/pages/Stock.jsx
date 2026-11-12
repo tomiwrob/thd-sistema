@@ -59,6 +59,7 @@ function Movimientos({ usuario, obras, centros, onChange }) {
   const vacio = () => ({ fecha: hoy(), tipo: 'egreso', material: MATERIALES[0], cantidad: '', obra_id: '', centro_costo_id: '', observaciones: '' })
   const [form, setForm] = useState(vacio)
   const [abierto, setAbierto] = useState(false)
+  const [editId, setEditId] = useState(null)
   const [msg, setMsg] = useState(null)
   const [guardando, setGuardando] = useState(false)
   const [filtro, setFiltro] = useState({ material: '', obra_id: '', tipo: '' })
@@ -96,7 +97,7 @@ function Movimientos({ usuario, obras, centros, onChange }) {
     e.preventDefault()
     setGuardando(true)
     setMsg(null)
-    const { error } = await supabase.from('movimientos_caneria').insert({
+    const datos = {
       fecha: form.fecha,
       tipo: form.tipo,
       material: form.material,
@@ -104,14 +105,37 @@ function Movimientos({ usuario, obras, centros, onChange }) {
       obra_id: form.obra_id ? Number(form.obra_id) : null,
       centro_costo_id: form.centro_costo_id ? Number(form.centro_costo_id) : null,
       observaciones: form.observaciones || null,
-      usuario,
-    })
+    }
+    const { error } = editId
+      ? await supabase.from('movimientos_caneria').update(datos).eq('id', editId)
+      : await supabase.from('movimientos_caneria').insert({ ...datos, usuario })
     setGuardando(false)
     if (error) return setMsg(traducirError(error))
-    setForm(vacio())
-    setAbierto(false)
+    cerrarForm()
     cargar()
     onChange()
+  }
+
+  function editar(m) {
+    setEditId(m.id)
+    setForm({
+      fecha: m.fecha,
+      tipo: m.tipo,
+      material: m.material,
+      cantidad: String(m.cantidad),
+      obra_id: m.obra_id ? String(m.obra_id) : '',
+      centro_costo_id: m.centro_costo_id ? String(m.centro_costo_id) : '',
+      observaciones: m.observaciones || '',
+    })
+    setMsg(null)
+    setAbierto(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function cerrarForm() {
+    setAbierto(false)
+    setEditId(null)
+    setForm(vacio())
   }
 
   async function borrar(m) {
@@ -157,7 +181,8 @@ function Movimientos({ usuario, obras, centros, onChange }) {
       </div>
 
       {abierto && (
-        <form className="form-grid" onSubmit={guardar}>
+        <form className={`form-grid ${editId ? 'editando' : ''}`} onSubmit={guardar}>
+          {editId && <p className="full editando-titulo">Editando movimiento del {fmtFecha(form.fecha)}</p>}
           <div className="full toggle">
             <button type="button" className={form.tipo === 'ingreso' ? 'on in' : ''} onClick={() => set('tipo', 'ingreso')}>
               ↑ Ingreso
@@ -210,9 +235,9 @@ function Movimientos({ usuario, obras, centros, onChange }) {
           </label>
           <div className="form-actions full">
             <button className="btn primary" disabled={guardando}>
-              {guardando ? 'Guardando…' : 'Guardar movimiento'}
+              {guardando ? 'Guardando…' : editId ? 'Guardar cambios' : 'Guardar movimiento'}
             </button>
-            <button type="button" className="btn ghost" onClick={() => { setAbierto(false); setForm(vacio()) }}>
+            <button type="button" className="btn ghost" onClick={cerrarForm}>
               Cancelar
             </button>
           </div>
@@ -264,7 +289,7 @@ function Movimientos({ usuario, obras, centros, onChange }) {
             </thead>
             <tbody>
               {movs.map((m) => (
-                <tr key={m.id}>
+                <tr key={m.id} className={m.id === editId ? 'fila-editando' : ''}>
                   <td data-label="Fecha">{fmtFecha(m.fecha)}</td>
                   <td data-label="Tipo">
                     <span className={`pill ${m.tipo}`}>{m.tipo === 'ingreso' ? '↑ Ingreso' : '↓ Egreso'}</span>
@@ -278,6 +303,9 @@ function Movimientos({ usuario, obras, centros, onChange }) {
                   <td data-label="C. costo">{centro(m.centro_costo_id)?.codigo || '—'}</td>
                   <td data-label="Obs.">{m.observaciones || '—'}</td>
                   <td className="acciones">
+                    <button className="btn small ghost" onClick={() => editar(m)}>
+                      Editar
+                    </button>
                     <button className="btn small danger" onClick={() => borrar(m)}>
                       Borrar
                     </button>
