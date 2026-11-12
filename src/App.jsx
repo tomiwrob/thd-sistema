@@ -35,7 +35,7 @@ export default function App() {
     <div className="app">
       <header className="top">
         <div className="brand">
-          <span className="logo">THD</span>
+          <img className="logo" src="/logo-thd.png" alt="THD Argentina" />
           <span className="brand-txt">Obras</span>
         </div>
         <nav className="nav">
@@ -83,9 +83,8 @@ function Login() {
   return (
     <div className="login-wrap">
       <form className="login" onSubmit={entrar}>
-        <div className="login-logo">THD</div>
+        <img className="login-logo" src="/logo-thd.png" alt="THD Argentina" />
         <h1>Sistema de obras</h1>
-        <p className="muted">THD Argentina</p>
         <label>
           <span>Email</span>
           <input type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -113,7 +112,7 @@ function FaltaConfig() {
   return (
     <div className="login-wrap">
       <div className="login">
-        <div className="login-logo">THD</div>
+        <img className="login-logo" src="/logo-thd.png" alt="THD Argentina" />
         <h1>Falta conectar la base de datos</h1>
         <p>
           Cargá las variables <code>VITE_SUPABASE_URL</code> y <code>VITE_SUPABASE_ANON_KEY</code> en Vercel (Settings →
