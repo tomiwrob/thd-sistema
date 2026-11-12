@@ -4,17 +4,23 @@ import Stock from './pages/Stock'
 import Equipos from './pages/Equipos'
 import ParteDiario from './pages/ParteDiario'
 import Administracion from './pages/Administracion'
+import Dashboard from './pages/Dashboard'
 
 const SECCIONES = [
-  { id: 'parte', label: 'Parte diario', icon: '📋' },
-  { id: 'stock', label: 'Stock cañería', icon: '🛢️' },
-  { id: 'equipos', label: 'Herramientas', icon: '🛠️' },
-  { id: 'admin', label: 'Administración', icon: '⚙️' },
+  { id: 'inicio', label: 'Resumen' },
+  { id: 'parte', label: 'Parte diario' },
+  { id: 'stock', label: 'Stock cañería' },
+  { id: 'equipos', label: 'Herramientas' },
+  { id: 'admin', label: 'Administración' },
 ]
 
 export default function App() {
   const [session, setSession] = useState(undefined)
-  const [seccion, setSeccion] = useState(() => localStorageGet('seccion') || 'parte')
+  const [seccion, setSeccion] = useState(() => {
+    const s = localStorageGet('seccion')
+    return SECCIONES.some((x) => x.id === s) ? s : 'inicio'
+  })
+  const [menuAbierto, setMenuAbierto] = useState(false)
 
   useEffect(() => {
     if (!configurado) return
@@ -30,32 +36,46 @@ export default function App() {
   if (!session) return <Login />
 
   const usuario = session.user.email
+  const ir = (id) => {
+    setSeccion(id)
+    setMenuAbierto(false)
+    window.scrollTo(0, 0)
+  }
 
   return (
-    <div className="app">
-      <header className="top">
-        <div className="brand">
+    <div className={`app ${menuAbierto ? 'menu-abierto' : ''}`}>
+      <header className="top-movil">
+        <button className="logo-btn" onClick={() => ir('inicio')} aria-label="Ir al resumen">
           <img className="logo" src="/logo-thd.png" alt="THD Argentina" />
-          <span className="brand-txt">Obras</span>
-        </div>
-        <nav className="nav">
+        </button>
+        <button className="btn small" onClick={() => setMenuAbierto((v) => !v)}>
+          {menuAbierto ? 'Cerrar' : 'Menú'}
+        </button>
+      </header>
+
+      <aside className="sidebar">
+        <button className="logo-card" onClick={() => ir('inicio')} aria-label="Ir al resumen">
+          <img src="/logo-thd.png" alt="THD Argentina" />
+        </button>
+        <nav className="side-nav">
           {SECCIONES.map((s) => (
-            <button key={s.id} className={seccion === s.id ? 'active' : ''} onClick={() => setSeccion(s.id)}>
-              <span className="ico">{s.icon}</span>
-              <span>{s.label}</span>
+            <button key={s.id} className={seccion === s.id ? 'active' : ''} onClick={() => ir(s.id)}>
+              {s.label}
             </button>
           ))}
         </nav>
-        <div className="user">
-          <span className="user-mail">{usuario}</span>
-          <button className="btn small ghost-light" onClick={() => supabase.auth.signOut()}>
-            Salir
+        <div className="side-user">
+          <span className="side-mail">{usuario}</span>
+          <button className="side-salir" onClick={() => supabase.auth.signOut()}>
+            Cerrar sesión
           </button>
         </div>
-      </header>
+      </aside>
+      <div className="velo" onClick={() => setMenuAbierto(false)} />
 
       <main className="main">
         <h2 className="titulo">{SECCIONES.find((s) => s.id === seccion)?.label}</h2>
+        {seccion === 'inicio' && <Dashboard ir={ir} />}
         {seccion === 'stock' && <Stock usuario={usuario} />}
         {seccion === 'equipos' && <Equipos />}
         {seccion === 'parte' && <ParteDiario usuario={usuario} />}

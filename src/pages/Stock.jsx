@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import CrudTable, { traducirError } from '../components/CrudTable'
 import { supabase } from '../supabase'
+import StockCards from '../components/StockCards'
 import { MATERIALES, exportarExcel, fmtFecha, hoy, opciones, unidadDe, useRows } from '../util'
 
 export default function Stock({ usuario }) {
@@ -22,22 +23,7 @@ export default function Stock({ usuario }) {
 
   return (
     <div>
-      <div className="stock-cards">
-        {MATERIALES.map((m) => {
-          const s = stock.find((x) => x.material === m)
-          const n = Number(s?.stock || 0)
-          return (
-            <div key={m} className={`stock-card ${n < 0 ? 'neg' : ''}`}>
-              <div className="stock-mat">{m}</div>
-              <div className="stock-num">{n.toLocaleString('es-AR')}</div>
-              <div className="stock-sub">
-                {unidadDe(m)} · ↑ {Number(s?.ingresos || 0).toLocaleString('es-AR')} ↓{' '}
-                {Number(s?.egresos || 0).toLocaleString('es-AR')}
-              </div>
-            </div>
-          )
-        })}
-      </div>
+      <StockCards stock={stock} />
 
       <div className="subtabs">
         {['Movimientos', 'Obras'].map((s) => (
