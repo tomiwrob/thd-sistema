@@ -24,14 +24,16 @@ create table if not exists personal (
   equipo_id bigint references equipos(id) on delete set null,
   nombre text not null,
   apellido text not null,
-  dni text not null unique,
+  cuil text unique,
+  funcion text,
   created_at timestamptz default now()
 );
 
 create table if not exists vehiculos (
   id bigint generated always as identity primary key,
   equipo_id bigint references equipos(id) on delete set null,
-  descripcion text not null,
+  marca text not null,
+  modelo text,
   patente text,
   created_at timestamptz default now()
 );
@@ -134,7 +136,7 @@ create table if not exists parte_personal (
   personal_id bigint references personal(id) on delete set null,
   nombre text not null,
   apellido text not null,
-  dni text not null
+  cuil text
 );
 
 create table if not exists parte_fotos (

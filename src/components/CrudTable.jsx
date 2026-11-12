@@ -185,7 +185,7 @@ export function Campo({ f, value, onChange }) {
 
 export function traducirError(error) {
   const m = error?.message || String(error)
-  if (m.includes('duplicate key')) return 'Ya existe un registro con ese dato (por ejemplo, el mismo DNI o código).'
+  if (m.includes('duplicate key')) return 'Ya existe un registro con ese dato (por ejemplo, el mismo CUIL, patente o código).'
   if (m.includes('violates foreign key')) return 'No se puede borrar: hay otros datos que dependen de este registro.'
   return m
 }

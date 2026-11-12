@@ -92,7 +92,7 @@ function ListaPartes({ datos, onNuevo, onVer }) {
       return {
         ...base(p),
         'Cant. personal': gente.length,
-        Personal: gente.map((g) => `${g.apellido}, ${g.nombre} (DNI ${g.dni})`).join(' / '),
+        Personal: gente.map((g) => `${g.apellido}, ${g.nombre}${g.cuil ? ` (CUIL ${g.cuil})` : ''}`).join(' / '),
         'Vactor contratado': p.vactor_contratado ? 'Sí' : 'No',
         'Fotos remitos vactor': cuenta(p.id, 'remito_vactor'),
         'Fotos planillas perforación': cuenta(p.id, 'planilla_perforacion'),
@@ -105,7 +105,7 @@ function ListaPartes({ datos, onNuevo, onVer }) {
     const filasPersonal = partes.flatMap((p) =>
       personal
         .filter((x) => x.parte_id === p.id)
-        .map((g) => ({ ...base(p), Apellido: g.apellido, Nombre: g.nombre, DNI: g.dni })),
+        .map((g) => ({ ...base(p), Apellido: g.apellido, Nombre: g.nombre, CUIL: g.cuil || '' })),
     )
     exportarExcel(`Partes_diarios_${desde}_a_${hasta}.xlsx`, {
       'Partes diarios': filasPartes,
@@ -209,8 +209,8 @@ function NuevoParte({ datos, usuario, onListo }) {
     tareas: '',
     observaciones: '',
   })
-  const [presentes, setPresentes] = useState([]) // [{ personal_id, nombre, apellido, dni }]
-  const [extra, setExtra] = useState({ nombre: '', apellido: '', dni: '' })
+  const [presentes, setPresentes] = useState([]) // [{ personal_id, nombre, apellido, cuil }]
+  const [extra, setExtra] = useState({ nombre: '', apellido: '', cuil: '' })
   const [archivos, setArchivos] = useState({ remito_vactor: [], planilla_perforacion: [], ats: [] })
   const [estado, setEstado] = useState(null)
   const [msg, setMsg] = useState(null)
@@ -232,7 +232,7 @@ function NuevoParte({ datos, usuario, onListo }) {
     const e = equipos.rows.find((x) => String(x.id) === String(id))
     setF((x) => ({ ...x, equipo_id: id, centro_costo_id: e ? String(e.centro_costo_id) : x.centro_costo_id }))
     const delEquipo = personal.rows.filter((p) => String(p.equipo_id) === String(id))
-    setPresentes(delEquipo.map((p) => ({ personal_id: p.id, nombre: p.nombre, apellido: p.apellido, dni: p.dni })))
+    setPresentes(delEquipo.map((p) => ({ personal_id: p.id, nombre: p.nombre, apellido: p.apellido, cuil: p.cuil })))
   }
 
   const estaPresente = (p) => presentes.some((x) => x.personal_id === p.id)
@@ -240,7 +240,7 @@ function NuevoParte({ datos, usuario, onListo }) {
     setPresentes((xs) =>
       estaPresente(p)
         ? xs.filter((x) => x.personal_id !== p.id)
-        : [...xs, { personal_id: p.id, nombre: p.nombre, apellido: p.apellido, dni: p.dni }],
+        : [...xs, { personal_id: p.id, nombre: p.nombre, apellido: p.apellido, cuil: p.cuil }],
     )
 
   const delEquipo = personal.rows.filter((p) => f.equipo_id && String(p.equipo_id) === String(f.equipo_id))
@@ -248,10 +248,10 @@ function NuevoParte({ datos, usuario, onListo }) {
   const agregadosFuera = presentes.filter((x) => !delEquipo.some((p) => p.id === x.personal_id))
 
   function agregarExtra() {
-    if (!extra.nombre || !extra.apellido || !extra.dni) return setMsg('Completá nombre, apellido y DNI.')
+    if (!extra.nombre || !extra.apellido) return setMsg('Completá nombre y apellido.')
     setMsg(null)
-    setPresentes((xs) => [...xs, { personal_id: null, ...extra }])
-    setExtra({ nombre: '', apellido: '', dni: '' })
+    setPresentes((xs) => [...xs, { personal_id: null, ...extra, cuil: extra.cuil || null }])
+    setExtra({ nombre: '', apellido: '', cuil: '' })
   }
 
   async function guardar(e) {
@@ -370,7 +370,7 @@ function NuevoParte({ datos, usuario, onListo }) {
               <label key={p.id} className="check">
                 <input type="checkbox" checked={estaPresente(p)} onChange={() => togglePersona(p)} />
                 <span>
-                  {nombreCompleto(p)} <small>DNI {p.dni}</small>
+                  {nombreCompleto(p)} {p.funcion && <small>{p.funcion}</small>} {p.cuil && <small>CUIL {p.cuil}</small>}
                 </span>
               </label>
             ))}
@@ -386,7 +386,7 @@ function NuevoParte({ datos, usuario, onListo }) {
         <ul className="chips">
           {agregadosFuera.map((p, i) => (
             <li key={i}>
-              {p.apellido}, {p.nombre} · DNI {p.dni}
+              {p.apellido}, {p.nombre}{p.cuil ? ` · CUIL ${p.cuil}` : ''}
               <button type="button" onClick={() => setPresentes((xs) => xs.filter((x) => x !== p))}>
                 ×
               </button>
@@ -408,7 +408,7 @@ function NuevoParte({ datos, usuario, onListo }) {
             <option value="">— Elegir —</option>
             {otros.map((p) => (
               <option key={p.id} value={p.id}>
-                {nombreCompleto(p)} · DNI {p.dni}
+                {nombreCompleto(p)}{p.cuil ? ` · CUIL ${p.cuil}` : ''}
               </option>
             ))}
           </select>
@@ -426,8 +426,8 @@ function NuevoParte({ datos, usuario, onListo }) {
             <input value={extra.nombre} onChange={(e) => setExtra({ ...extra, nombre: e.target.value })} />
           </label>
           <label>
-            <span>DNI</span>
-            <input value={extra.dni} inputMode="numeric" onChange={(e) => setExtra({ ...extra, dni: e.target.value })} />
+            <span>CUIL</span>
+            <input value={extra.cuil} placeholder="20-12345678-9" onChange={(e) => setExtra({ ...extra, cuil: e.target.value })} />
           </label>
           <div className="form-actions">
             <button type="button" className="btn" onClick={agregarExtra}>
@@ -585,7 +585,7 @@ function VerParte({ id, datos, onVolver }) {
               <tr>
                 <th>Apellido</th>
                 <th>Nombre</th>
-                <th>DNI</th>
+                <th>CUIL</th>
               </tr>
             </thead>
             <tbody>
@@ -593,7 +593,7 @@ function VerParte({ id, datos, onVolver }) {
                 <tr key={g.id}>
                   <td data-label="Apellido">{g.apellido}</td>
                   <td data-label="Nombre">{g.nombre}</td>
-                  <td data-label="DNI">{g.dni}</td>
+                  <td data-label="CUIL">{g.cuil || '—'}</td>
                 </tr>
               ))}
             </tbody>

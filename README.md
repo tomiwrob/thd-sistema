@@ -11,7 +11,7 @@ Tecnología: React + Vite, publicada en Vercel, con base de datos, login y fotos
 
 ## Puesta en marcha
 
-1. **Base de datos**: en Supabase → *SQL Editor* → *New query*, pegar el contenido de `supabase/schema.sql` y tocar *Run*.
+1. **Base de datos**: en Supabase → *SQL Editor* → *New query*, pegar el contenido de `supabase/schema.sql` y tocar *Run*. Después hacer lo mismo con `supabase/002_cuil_y_datos_grupos_trabajo.sql` (CUIL + carga de centros de costo, personal y vehículos).
 2. **Usuarios**: en Supabase → *Authentication* → *Users* → *Add user* → *Create new user* (email + contraseña, marcar *Auto Confirm User*). Recomendado: *Authentication → Sign In / Providers* → desactivar *Allow new users to sign up*.
 3. **Claves**: en Supabase → *Project Settings* → *API* (o *Data API* / *API Keys*), copiar la *Project URL* y la clave pública (*anon* o *publishable*).
 4. **Vercel**: en el proyecto → *Settings* → *Environment Variables*, agregar:

@@ -64,7 +64,8 @@ export default function Administracion() {
           fields={[
             { key: 'apellido', label: 'Apellido', required: true },
             { key: 'nombre', label: 'Nombre', required: true },
-            { key: 'dni', label: 'DNI', required: true },
+            { key: 'cuil', label: 'CUIL' },
+            { key: 'funcion', label: 'Función' },
             { key: 'equipo_id', label: 'Equipo', type: 'select', options: optEquipos },
           ]}
         />
@@ -74,9 +75,10 @@ export default function Administracion() {
         <CrudTable
           title="Vehículos"
           table="vehiculos"
-          order="descripcion"
+          order="marca"
           fields={[
-            { key: 'descripcion', label: 'Vehículo (marca / modelo)', required: true },
+            { key: 'marca', label: 'Marca', required: true },
+            { key: 'modelo', label: 'Modelo' },
             { key: 'patente', label: 'Patente' },
             { key: 'equipo_id', label: 'Equipo', type: 'select', options: optEquipos },
           ]}

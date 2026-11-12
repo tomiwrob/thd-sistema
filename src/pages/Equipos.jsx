@@ -73,7 +73,7 @@ export default function Equipos() {
 
 function DetalleEquipo({ equipoId, sec }) {
   const personal = useRows('personal', { order: 'apellido', filter: { equipo_id: equipoId } })
-  const vehiculos = useRows('vehiculos', { order: 'descripcion', filter: { equipo_id: equipoId } })
+  const vehiculos = useRows('vehiculos', { order: 'marca', filter: { equipo_id: equipoId } })
   const maquinas = useRows('maquinas', { order: 'descripcion', filter: { equipo_id: equipoId } })
   const [vehiculoId, setVehiculoId] = useState('')
   const [maquinaId, setMaquinaId] = useState('')
@@ -121,7 +121,7 @@ function DetalleEquipo({ equipoId, sec }) {
               <option value="">— Elegir —</option>
               {vehiculos.rows.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.descripcion} {v.patente ? `· ${v.patente}` : ''}
+                  {v.marca} {v.modelo || ''} {v.patente ? `· ${v.patente}` : ''}
                 </option>
               ))}
             </select>
@@ -224,12 +224,13 @@ function BotonExportar({ centro, equipos }) {
         Cantidad: Number(r.cantidad),
         Talle: r.talle || '',
         'Entregado a': nombreCompleto(per(r.personal_id)),
-        DNI: per(r.personal_id)?.dni || '',
+        CUIL: per(r.personal_id)?.cuil || '',
         'Fecha entrega': fmtFecha(r.fecha_entrega),
       })),
       Cubiertas: (cu.data || []).map((r) => ({
         Equipo: nombreEq(veh(r.vehiculo_id)?.equipo_id),
-        Vehículo: veh(r.vehiculo_id)?.descripcion || '',
+        Marca: veh(r.vehiculo_id)?.marca || '',
+        Modelo: veh(r.vehiculo_id)?.modelo || '',
         Patente: veh(r.vehiculo_id)?.patente || '',
         Fecha: fmtFecha(r.fecha),
         Posición: r.posicion || '',
