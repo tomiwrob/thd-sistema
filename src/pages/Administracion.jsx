@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import CrudTable from '../components/CrudTable'
+import ResumenEquipo from '../components/ResumenEquipo'
 import { opciones, useRows } from '../util'
 
 const SECCIONES = ['Centros de costo', 'Equipos', 'Personal', 'Vehículos', 'Máquinas']
 
 export default function Administracion() {
   const [sec, setSec] = useState(SECCIONES[0])
+  const [verEquipo, setVerEquipo] = useState(null)
   const centros = useRows('centros_costo', { order: 'codigo' })
   const equipos = useRows('equipos', { order: 'nombre' })
 
@@ -48,6 +50,8 @@ export default function Administracion() {
           table="equipos"
           order="nombre"
           onChange={equipos.reload}
+          onVer={(e) => setVerEquipo(e.id)}
+          verLabel="Ver personal"
           empty="Primero creá un centro de costo y después sus equipos."
           fields={[
             { key: 'nombre', label: 'Nombre del equipo', required: true },
@@ -55,6 +59,7 @@ export default function Administracion() {
           ]}
         />
       )}
+      {verEquipo && <ResumenEquipo equipoId={verEquipo} onClose={() => setVerEquipo(null)} />}
 
       {sec === 'Personal' && (
         <CrudTable

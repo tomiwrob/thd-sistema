@@ -7,7 +7,7 @@ import { fmtFecha, useRows } from '../util'
  * fields: [{ key, label, type: 'text'|'number'|'date'|'select'|'textarea', options, required, hideInList }]
  * fixed: valores fijos que se agregan al guardar y filtran la lista (ej. { equipo_id: 3 })
  */
-export default function CrudTable({ title, table, fields, fixed = {}, order = 'id', ascending = true, empty, onChange }) {
+export default function CrudTable({ title, table, fields, fixed = {}, order = 'id', ascending = true, empty, onChange, onVer, verLabel = 'Ver' }) {
   const { rows, loading, error, reload } = useRows(table, { order, ascending, filter: fixed })
   const vacio = () => Object.fromEntries(fields.map((f) => [f.key, f.default ?? '']))
   const [form, setForm] = useState(vacio)
@@ -132,13 +132,18 @@ export default function CrudTable({ title, table, fields, fixed = {}, order = 'i
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id}>
+                <tr key={r.id} className={onVer ? 'clickable' : ''} onClick={onVer ? () => onVer(r) : undefined}>
                   {visibles.map((f) => (
                     <td key={f.key} data-label={f.label}>
                       {mostrar(f, r)}
                     </td>
                   ))}
-                  <td className="acciones">
+                  <td className="acciones" onClick={(e) => e.stopPropagation()}>
+                    {onVer && (
+                      <button className="btn small primary" onClick={() => onVer(r)}>
+                        {verLabel}
+                      </button>
+                    )}
                     <button className="btn small ghost" onClick={() => editar(r)}>
                       Editar
                     </button>

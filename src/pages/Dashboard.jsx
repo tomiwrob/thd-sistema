@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import StockCards from '../components/StockCards'
+import ResumenEquipo from '../components/ResumenEquipo'
 import { supabase } from '../supabase'
 import { fmtFecha, hoy } from '../util'
 
@@ -8,6 +9,7 @@ const sumar = (rows) => rows.reduce((t, r) => t + Number(r.cantidad || 0), 0)
 export default function Dashboard({ ir }) {
   const [d, setD] = useState(null)
   const [error, setError] = useState(null)
+  const [verEquipo, setVerEquipo] = useState(null)
 
   useEffect(() => {
     ;(async () => {
@@ -177,7 +179,7 @@ export default function Dashboard({ ir }) {
 
       <section className="card">
         <div className="card-head">
-          <h3>Stock por equipo</h3>
+          <h3>Resumen por equipo</h3>
           <button className="btn small" onClick={() => ir('equipos')}>
             Ver detalle
           </button>
@@ -193,11 +195,12 @@ export default function Dashboard({ ir }) {
                 <th>Herramientas</th>
                 <th>EPP</th>
                 <th>Accesorios máquinas</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               {filasEquipos.map((x) => (
-                <tr key={x.e.id}>
+                <tr key={x.e.id} className="clickable" onClick={() => setVerEquipo(x.e.id)}>
                   <td data-label="Centro">{x.c?.codigo || '—'}</td>
                   <td data-label="Equipo">
                     <strong>{x.e.nombre}</strong>
@@ -207,13 +210,17 @@ export default function Dashboard({ ir }) {
                   <td data-label="Herramientas">{x.herramientas.toLocaleString('es-AR')}</td>
                   <td data-label="EPP">{x.epp.toLocaleString('es-AR')}</td>
                   <td data-label="Accesorios">{x.accesorios.toLocaleString('es-AR')}</td>
+                  <td className="acciones">
+                    <button className="btn small primary">Ver equipo</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <p className="muted small">Herramientas, EPP y accesorios en unidades totales.</p>
+        <p className="muted small">Herramientas, EPP y accesorios en unidades totales. Tocá un equipo para ver su personal.</p>
       </section>
+      {verEquipo && <ResumenEquipo equipoId={verEquipo} onClose={() => setVerEquipo(null)} />}
     </div>
   )
 }
