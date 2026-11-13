@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { traducirError } from '../components/CrudTable'
+import { usePuedeEditar } from '../permisos'
 import { supabase } from '../supabase'
 import { comprimirImagen, exportarExcel, fmtFecha, hoy, nombreCompleto, useRows } from '../util'
 
@@ -29,6 +30,7 @@ export default function ParteDiario({ usuario }) {
 /* ---------------------------------------------------------------- Lista */
 
 function ListaPartes({ datos, onNuevo, onVer }) {
+  const puedeEditar = usePuedeEditar()
   const [desde, setDesde] = useState(inicioMes())
   const [hasta, setHasta] = useState(hoy())
   const [buscar, setBuscar] = useState('')
@@ -121,9 +123,11 @@ function ListaPartes({ datos, onNuevo, onVer }) {
           <button className="btn ghost" onClick={exportar} disabled={!partes.length}>
             ⬇ Excel
           </button>
-          <button className="btn primary" onClick={onNuevo}>
-            + Nuevo parte
-          </button>
+          {puedeEditar && (
+            <button className="btn primary" onClick={onNuevo}>
+              + Nuevo parte
+            </button>
+          )}
         </div>
       </div>
 
@@ -174,9 +178,11 @@ function ListaPartes({ datos, onNuevo, onVer }) {
                     <button className="btn small" onClick={() => onVer(p.id)}>
                       Ver
                     </button>
-                    <button className="btn small danger" onClick={() => borrar(p)}>
-                      Borrar
-                    </button>
+                    {puedeEditar && (
+                      <button className="btn small danger" onClick={() => borrar(p)}>
+                        Borrar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

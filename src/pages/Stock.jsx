@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import CrudTable, { traducirError } from '../components/CrudTable'
 import { supabase } from '../supabase'
 import StockCards from '../components/StockCards'
+import { usePuedeEditar } from '../permisos'
 import { MATERIALES, exportarExcel, fmtFecha, hoy, opciones, unidadDe, useRows } from '../util'
 
 export default function Stock({ usuario }) {
@@ -56,6 +57,7 @@ export default function Stock({ usuario }) {
 }
 
 function Movimientos({ usuario, obras, centros, onChange }) {
+  const puedeEditar = usePuedeEditar()
   const vacio = () => ({ fecha: hoy(), tipo: 'egreso', material: MATERIALES[0], cantidad: '', obra_id: '', centro_costo_id: '', observaciones: '' })
   const [form, setForm] = useState(vacio)
   const [abierto, setAbierto] = useState(false)
@@ -172,7 +174,7 @@ function Movimientos({ usuario, obras, centros, onChange }) {
           <button className="btn ghost" onClick={exportar} disabled={!movs.length}>
             ⬇ Excel
           </button>
-          {!abierto && (
+          {!abierto && puedeEditar && (
             <button className="btn primary" onClick={() => setAbierto(true)}>
               + Movimiento
             </button>
@@ -303,12 +305,16 @@ function Movimientos({ usuario, obras, centros, onChange }) {
                   <td data-label="C. costo">{centro(m.centro_costo_id)?.codigo || '—'}</td>
                   <td data-label="Obs.">{m.observaciones || '—'}</td>
                   <td className="acciones">
-                    <button className="btn small ghost" onClick={() => editar(m)}>
-                      Editar
-                    </button>
-                    <button className="btn small danger" onClick={() => borrar(m)}>
-                      Borrar
-                    </button>
+                    {puedeEditar && (
+                      <>
+                        <button className="btn small ghost" onClick={() => editar(m)}>
+                          Editar
+                        </button>
+                        <button className="btn small danger" onClick={() => borrar(m)}>
+                          Borrar
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}

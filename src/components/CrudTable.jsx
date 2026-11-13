@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../supabase'
 import { fmtFecha, useRows } from '../util'
+import { usePuedeEditar } from '../permisos'
 
 /**
  * Tabla genérica con alta, edición y baja.
@@ -8,6 +9,7 @@ import { fmtFecha, useRows } from '../util'
  * fixed: valores fijos que se agregan al guardar y filtran la lista (ej. { equipo_id: 3 })
  */
 export default function CrudTable({ title, table, fields, fixed = {}, order = 'id', ascending = true, empty, onChange, onVer, verLabel = 'Ver' }) {
+  const puedeEditar = usePuedeEditar()
   const { rows, loading, error, reload } = useRows(table, { order, ascending, filter: fixed })
   const vacio = () => Object.fromEntries(fields.map((f) => [f.key, f.default ?? '']))
   const [form, setForm] = useState(vacio)
@@ -84,7 +86,7 @@ export default function CrudTable({ title, table, fields, fixed = {}, order = 'i
     <section className="card">
       <div className="card-head">
         <h3>{title}</h3>
-        {!abierto && (
+        {!abierto && puedeEditar && (
           <button className="btn" onClick={() => setAbierto(true)}>
             + Agregar
           </button>
@@ -144,12 +146,16 @@ export default function CrudTable({ title, table, fields, fixed = {}, order = 'i
                         {verLabel}
                       </button>
                     )}
-                    <button className="btn small ghost" onClick={() => editar(r)}>
-                      Editar
-                    </button>
-                    <button className="btn small danger" onClick={() => borrar(r)}>
-                      Borrar
-                    </button>
+                    {puedeEditar && (
+                      <>
+                        <button className="btn small ghost" onClick={() => editar(r)}>
+                          Editar
+                        </button>
+                        <button className="btn small danger" onClick={() => borrar(r)}>
+                          Borrar
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}

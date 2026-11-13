@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import CrudTable from '../components/CrudTable'
 import ResumenEquipo from '../components/ResumenEquipo'
+import Usuarios from './Usuarios'
+import { usePuedeEditar } from '../permisos'
 import { opciones, useRows } from '../util'
 
 const SECCIONES = ['Centros de costo', 'Equipos', 'Personal', 'Vehículos', 'Máquinas']
 
 export default function Administracion() {
+  const puedeEditar = usePuedeEditar()
+  const secciones = puedeEditar ? [...SECCIONES, 'Usuarios'] : SECCIONES
   const [sec, setSec] = useState(SECCIONES[0])
   const [verEquipo, setVerEquipo] = useState(null)
   const centros = useRows('centros_costo', { order: 'codigo' })
@@ -24,12 +28,14 @@ export default function Administracion() {
         cada equipo. Estos datos se usan en el resto del sistema.
       </p>
       <div className="subtabs">
-        {SECCIONES.map((s) => (
+        {secciones.map((s) => (
           <button key={s} className={s === sec ? 'active' : ''} onClick={() => setSec(s)}>
             {s}
           </button>
         ))}
       </div>
+
+      {sec === 'Usuarios' && puedeEditar && <Usuarios />}
 
       {sec === 'Centros de costo' && (
         <CrudTable

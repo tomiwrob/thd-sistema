@@ -251,3 +251,13 @@ tr.clickable { cursor: pointer; }
   .modal { border-radius: 0; min-height: 100%; }
   .mini-kpis { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ---------- Permisos ---------- */
+.side-rol { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #9fb3cf; padding: 0 4px; }
+.side-rol.editor { color: var(--celeste); }
+.toggle.rol button { padding: 6px 10px; font-size: 13px; }
+.toggle.rol button.on.in { border-color: var(--celeste); color: var(--azul); background: var(--celeste-claro); }
+.toggle.rol button.on.lector { border-color: #9aa8b6; color: var(--texto); background: #f1f4f7; }
+.toggle.rol button:disabled { cursor: default; }
+.pill.tu { background: var(--celeste); color: var(--azul); margin-left: 4px; }
+.input-tabla { padding: 6px 8px; font-size: 14px; }

@@ -5,6 +5,7 @@ import Equipos from './pages/Equipos'
 import ParteDiario from './pages/ParteDiario'
 import Administracion from './pages/Administracion'
 import Dashboard from './pages/Dashboard'
+import { PermisosContext } from './permisos'
 
 const SECCIONES = [
   { id: 'inicio', label: 'Resumen' },
@@ -21,6 +22,7 @@ export default function App() {
     return SECCIONES.some((x) => x.id === s) ? s : 'inicio'
   })
   const [menuAbierto, setMenuAbierto] = useState(false)
+  const [perfil, setPerfil] = useState(null)
 
   useEffect(() => {
     if (!configurado) return
@@ -31,9 +33,25 @@ export default function App() {
 
   useEffect(() => localStorageSet('seccion', seccion), [seccion])
 
+  const userId = session?.user?.id
+  useEffect(() => {
+    if (!userId) return setPerfil(null)
+    supabase
+      .from('perfiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        // Si todavía no existe la tabla de permisos, la app funciona como antes (todos editan)
+        if (error) setPerfil({ rol: 'editor' })
+        else setPerfil(data || { rol: 'lector' })
+      })
+  }, [userId])
+
   if (!configurado) return <FaltaConfig />
   if (session === undefined) return <div className="center muted">Cargando…</div>
   if (!session) return <Login />
+  if (!perfil) return <div className="center muted">Cargando…</div>
 
   const usuario = session.user.email
   const ir = (id) => {
@@ -42,7 +60,10 @@ export default function App() {
     window.scrollTo(0, 0)
   }
 
+  const puedeEditar = perfil.rol === 'editor'
+
   return (
+    <PermisosContext.Provider value={{ puedeEditar, rol: perfil.rol, userId }}>
     <div className={`app ${menuAbierto ? 'menu-abierto' : ''}`}>
       <header className="top-movil">
         <button className="logo-btn" onClick={() => ir('inicio')} aria-label="Ir al resumen">
@@ -65,7 +86,8 @@ export default function App() {
           ))}
         </nav>
         <div className="side-user">
-          <span className="side-mail">{usuario}</span>
+          <span className="side-mail">{perfil.nombre || usuario}</span>
+          <span className={`side-rol ${puedeEditar ? 'editor' : ''}`}>{puedeEditar ? 'Puede editar' : 'Solo lectura'}</span>
           <button className="side-salir" onClick={() => supabase.auth.signOut()}>
             Cerrar sesión
           </button>
@@ -82,6 +104,7 @@ export default function App() {
         {seccion === 'admin' && <Administracion />}
       </main>
     </div>
+    </PermisosContext.Provider>
   )
 }
 
