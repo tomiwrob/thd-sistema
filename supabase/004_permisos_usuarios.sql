@@ -1,9 +1,10 @@
 -- =====================================================================
 -- THD Argentina - Actualización 004: permisos por usuario
---   editor  -> puede ver, cargar, editar y borrar
---   lector  -> solo puede ver y descargar Excel
--- Los usuarios nuevos quedan como "lector" hasta que un editor los cambie
+--   editor     -> puede ver, cargar, editar y borrar todo
+--   jefe_obra  -> puede cargar partes diarios (con fotos); el resto solo lo ve
+-- Los usuarios nuevos quedan como "jefe_obra" hasta que un editor los cambie
 -- desde la app (Administración > Usuarios).
+-- Si ya ejecutaste una versión anterior de este archivo, ejecutalo de nuevo: actualiza todo.
 --
 -- ANTES DE EJECUTAR: cambiá el email de la última línea por el tuyo.
 -- Pegar TODO en Supabase > SQL Editor > New query > Run. Se puede repetir.
@@ -14,9 +15,15 @@ create table if not exists perfiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   nombre text,
-  rol text not null default 'lector' check (rol in ('editor','lector')),
+  rol text not null default 'jefe_obra',
   created_at timestamptz default now()
 );
+
+-- Roles válidos (convierte el rol viejo "lector" en "jefe_obra")
+alter table perfiles drop constraint if exists perfiles_rol_check;
+update perfiles set rol = 'jefe_obra' where rol not in ('editor','jefe_obra');
+alter table perfiles add constraint perfiles_rol_check check (rol in ('editor','jefe_obra'));
+alter table perfiles alter column rol set default 'jefe_obra';
 
 -- ¿El usuario actual es editor?
 create or replace function public.es_editor()
@@ -24,6 +31,14 @@ returns boolean
 language sql stable security definer set search_path = public
 as $$
   select exists (select 1 from perfiles where id = auth.uid() and rol = 'editor');
+$$;
+
+-- ¿El usuario actual puede cargar partes diarios? (editores y jefes de obra)
+create or replace function public.puede_cargar_partes()
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (select 1 from perfiles where id = auth.uid() and rol in ('editor','jefe_obra'));
 $$;
 
 -- Crear el perfil automáticamente cuando se agrega un usuario en Supabase
@@ -67,7 +82,11 @@ begin
     execute format('drop policy if exists "editores modifican" on %I', t);
     execute format('drop policy if exists "editores borran" on %I', t);
     execute format('create policy "todos leen" on %I for select to authenticated using (true)', t);
-    execute format('create policy "editores cargan" on %I for insert to authenticated with check (es_editor())', t);
+    if t in ('partes_diarios','parte_personal','parte_fotos') then
+      execute format('create policy "editores cargan" on %I for insert to authenticated with check (puede_cargar_partes())', t);
+    else
+      execute format('create policy "editores cargan" on %I for insert to authenticated with check (es_editor())', t);
+    end if;
     execute format('create policy "editores modifican" on %I for update to authenticated using (es_editor()) with check (es_editor())', t);
     execute format('create policy "editores borran" on %I for delete to authenticated using (es_editor())', t);
   end loop;
@@ -80,7 +99,7 @@ drop policy if exists "fotos editores suben" on storage.objects;
 drop policy if exists "fotos editores modifican" on storage.objects;
 drop policy if exists "fotos editores borran" on storage.objects;
 create policy "fotos todos ven" on storage.objects for select to authenticated using (bucket_id = 'fotos');
-create policy "fotos editores suben" on storage.objects for insert to authenticated with check (bucket_id = 'fotos' and es_editor());
+create policy "fotos editores suben" on storage.objects for insert to authenticated with check (bucket_id = 'fotos' and puede_cargar_partes());
 create policy "fotos editores modifican" on storage.objects for update to authenticated using (bucket_id = 'fotos' and es_editor());
 create policy "fotos editores borran" on storage.objects for delete to authenticated using (bucket_id = 'fotos' and es_editor());
 

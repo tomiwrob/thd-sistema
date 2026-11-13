@@ -37,13 +37,13 @@ export default function Usuarios() {
       <div className="card-head">
         <h3>Usuarios y permisos</h3>
         <span className="muted small">
-          {editores} con permiso de edición · {rows.length - editores} solo lectura
+          {editores} pueden editar todo · {rows.length - editores} jefes de obra
         </span>
       </div>
       <p className="muted small" style={{ marginTop: 0 }}>
-        <strong>Puede editar:</strong> carga, modifica y borra datos. <strong>Solo lectura:</strong> ve todo y descarga
-        Excel, pero no puede cambiar nada. Los usuarios nuevos se crean en Supabase (Authentication → Users) y aparecen acá
-        como solo lectura.
+        <strong>Puede editar todo:</strong> carga, modifica y borra cualquier dato. <strong>Jefe de obra:</strong> carga
+        partes diarios con sus fotos; el resto lo ve y puede descargar Excel, pero no lo modifica. Los usuarios nuevos se
+        crean en Supabase (Authentication → Users) y aparecen acá como jefe de obra.
       </p>
       {msg && <p className="error">{msg}</p>}
       {cargando ? (
@@ -80,16 +80,16 @@ export default function Usuarios() {
                         disabled={guardando === p.id || p.id === userId}
                         onClick={() => cambiar(p, { rol: 'editor' })}
                       >
-                        Puede editar
+                        Puede editar todo
                       </button>
                       <button
                         type="button"
-                        className={p.rol === 'lector' ? 'on lector' : ''}
+                        className={p.rol !== 'editor' ? 'on lector' : ''}
                         disabled={guardando === p.id || p.id === userId}
                         title={p.id === userId ? 'No podés quitarte tu propio permiso' : ''}
-                        onClick={() => cambiar(p, { rol: 'lector' })}
+                        onClick={() => cambiar(p, { rol: 'jefe_obra' })}
                       >
-                        Solo lectura
+                        Jefe de obra
                       </button>
                     </div>
                   </td>

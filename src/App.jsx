@@ -5,7 +5,7 @@ import Equipos from './pages/Equipos'
 import ParteDiario from './pages/ParteDiario'
 import Administracion from './pages/Administracion'
 import Dashboard from './pages/Dashboard'
-import { PermisosContext } from './permisos'
+import { PermisosContext, ROLES } from './permisos'
 
 const SECCIONES = [
   { id: 'inicio', label: 'Resumen' },
@@ -44,7 +44,7 @@ export default function App() {
       .then(({ data, error }) => {
         // Si todavía no existe la tabla de permisos, la app funciona como antes (todos editan)
         if (error) setPerfil({ rol: 'editor' })
-        else setPerfil(data || { rol: 'lector' })
+        else setPerfil(data || { rol: 'jefe_obra' })
       })
   }, [userId])
 
@@ -61,9 +61,10 @@ export default function App() {
   }
 
   const puedeEditar = perfil.rol === 'editor'
+  const puedeCargarPartes = puedeEditar || perfil.rol === 'jefe_obra'
 
   return (
-    <PermisosContext.Provider value={{ puedeEditar, rol: perfil.rol, userId }}>
+    <PermisosContext.Provider value={{ puedeEditar, puedeCargarPartes, rol: perfil.rol, userId }}>
     <div className={`app ${menuAbierto ? 'menu-abierto' : ''}`}>
       <header className="top-movil">
         <button className="logo-btn" onClick={() => ir('inicio')} aria-label="Ir al resumen">
@@ -87,7 +88,7 @@ export default function App() {
         </nav>
         <div className="side-user">
           <span className="side-mail">{perfil.nombre || usuario}</span>
-          <span className={`side-rol ${puedeEditar ? 'editor' : ''}`}>{puedeEditar ? 'Puede editar' : 'Solo lectura'}</span>
+          <span className={`side-rol ${puedeEditar ? 'editor' : ''}`}>{ROLES[perfil.rol] || perfil.rol}</span>
           <button className="side-salir" onClick={() => supabase.auth.signOut()}>
             Cerrar sesión
           </button>
