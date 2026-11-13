@@ -119,6 +119,7 @@ create table if not exists partes_diarios (
   id bigint generated always as identity primary key,
   fecha date not null default current_date,
   obra_id bigint references obras(id) on delete set null,
+  ubicacion text,
   cliente text,
   centro_costo_id bigint references centros_costo(id) on delete set null,
   equipo_id bigint references equipos(id) on delete set null,

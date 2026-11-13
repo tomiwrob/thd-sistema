@@ -31,7 +31,7 @@ export default function ParteDiario({ usuario }) {
 function ListaPartes({ datos, onNuevo, onVer }) {
   const [desde, setDesde] = useState(inicioMes())
   const [hasta, setHasta] = useState(hoy())
-  const [obraId, setObraId] = useState('')
+  const [buscar, setBuscar] = useState('')
   const [partes, setPartes] = useState([])
   const [personal, setPersonal] = useState([])
   const [fotos, setFotos] = useState([])
@@ -40,13 +40,14 @@ function ListaPartes({ datos, onNuevo, onVer }) {
 
   const { obras, equipos, centros } = datos
   const obra = (id) => obras.rows.find((o) => o.id === id)
+  const ubicacionDe = (p) => p.ubicacion || obra(p.obra_id)?.ubicacion || obra(p.obra_id)?.nombre || ''
   const equipo = (id) => equipos.rows.find((e) => e.id === id)
   const centro = (id) => centros.rows.find((c) => c.id === id)
 
   async function cargar() {
     setCargando(true)
     let q = supabase.from('partes_diarios').select('*').gte('fecha', desde).lte('fecha', hasta)
-    if (obraId) q = q.eq('obra_id', obraId)
+    if (buscar.trim()) q = q.ilike('ubicacion', `%${buscar.trim()}%`)
     const { data, error } = await q.order('fecha', { ascending: false }).order('id', { ascending: false })
     if (error) setMsg(error.message)
     const ids = (data || []).map((p) => p.id)
@@ -65,7 +66,7 @@ function ListaPartes({ datos, onNuevo, onVer }) {
   useEffect(() => {
     cargar()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [desde, hasta, obraId])
+  }, [desde, hasta, buscar])
 
   const cuenta = (parteId, tipo) => fotos.filter((f) => f.parte_id === parteId && (!tipo || f.tipo === tipo)).length
 
@@ -81,9 +82,8 @@ function ListaPartes({ datos, onNuevo, onVer }) {
   function exportar() {
     const base = (p) => ({
       Fecha: fmtFecha(p.fecha),
-      Obra: obra(p.obra_id)?.nombre || '',
       Cliente: p.cliente || '',
-      Ubicación: obra(p.obra_id)?.ubicacion || '',
+      Ubicación: ubicacionDe(p),
       'Centro de costo': centro(p.centro_costo_id)?.codigo || '',
       Equipo: equipo(p.equipo_id)?.nombre || '',
     })
@@ -137,15 +137,8 @@ function ListaPartes({ datos, onNuevo, onVer }) {
           <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
         </label>
         <label>
-          <span>Obra</span>
-          <select value={obraId} onChange={(e) => setObraId(e.target.value)}>
-            <option value="">Todas</option>
-            {obras.rows.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.nombre}
-              </option>
-            ))}
-          </select>
+          <span>Ubicación</span>
+          <input type="search" placeholder="Buscar ubicación…" value={buscar} onChange={(e) => setBuscar(e.target.value)} />
         </label>
       </div>
       {msg && <p className="error">{msg}</p>}
@@ -160,7 +153,7 @@ function ListaPartes({ datos, onNuevo, onVer }) {
             <thead>
               <tr>
                 <th>Fecha</th>
-                <th>Obra</th>
+                <th>Ubicación</th>
                 <th>Cliente</th>
                 <th>Equipo</th>
                 <th>Personal</th>
@@ -172,7 +165,7 @@ function ListaPartes({ datos, onNuevo, onVer }) {
               {partes.map((p) => (
                 <tr key={p.id}>
                   <td data-label="Fecha">{fmtFecha(p.fecha)}</td>
-                  <td data-label="Obra">{obra(p.obra_id)?.nombre || '—'}</td>
+                  <td data-label="Ubicación">{ubicacionDe(p) || '—'}</td>
                   <td data-label="Cliente">{p.cliente || '—'}</td>
                   <td data-label="Equipo">{equipo(p.equipo_id)?.nombre || '—'}</td>
                   <td data-label="Personal">{personal.filter((x) => x.parte_id === p.id).length}</td>
@@ -198,10 +191,10 @@ function ListaPartes({ datos, onNuevo, onVer }) {
 /* ---------------------------------------------------------------- Nuevo */
 
 function NuevoParte({ datos, usuario, onListo }) {
-  const { obras, equipos, centros, personal } = datos
+  const { equipos, centros, personal } = datos
   const [f, setF] = useState({
     fecha: hoy(),
-    obra_id: '',
+    ubicacion: '',
     cliente: '',
     centro_costo_id: '',
     equipo_id: '',
@@ -217,16 +210,6 @@ function NuevoParte({ datos, usuario, onListo }) {
 
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }))
   const equiposFiltrados = equipos.rows.filter((e) => !f.centro_costo_id || String(e.centro_costo_id) === String(f.centro_costo_id))
-
-  function elegirObra(id) {
-    const o = obras.rows.find((x) => String(x.id) === String(id))
-    setF((x) => ({
-      ...x,
-      obra_id: id,
-      cliente: o?.cliente || x.cliente,
-      centro_costo_id: o?.centro_costo_id ? String(o.centro_costo_id) : x.centro_costo_id,
-    }))
-  }
 
   function elegirEquipo(id) {
     const e = equipos.rows.find((x) => String(x.id) === String(id))
@@ -263,7 +246,7 @@ function NuevoParte({ datos, usuario, onListo }) {
       .from('partes_diarios')
       .insert({
         fecha: f.fecha,
-        obra_id: f.obra_id ? Number(f.obra_id) : null,
+        ubicacion: f.ubicacion.trim(),
         cliente: f.cliente || null,
         centro_costo_id: f.centro_costo_id ? Number(f.centro_costo_id) : null,
         equipo_id: f.equipo_id ? Number(f.equipo_id) : null,
@@ -324,15 +307,13 @@ function NuevoParte({ datos, usuario, onListo }) {
           <input type="date" required value={f.fecha} onChange={(e) => set('fecha', e.target.value)} />
         </label>
         <label>
-          <span>Obra</span>
-          <select value={f.obra_id} onChange={(e) => elegirObra(e.target.value)}>
-            <option value="">— Elegir —</option>
-            {obras.rows.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.nombre}
-              </option>
-            ))}
-          </select>
+          <span>Ubicación *</span>
+          <input
+            required
+            placeholder="Ej.: Ruta 5 km 120, Luján"
+            value={f.ubicacion}
+            onChange={(e) => set('ubicacion', e.target.value)}
+          />
         </label>
         <label>
           <span>Cliente *</span>
@@ -557,12 +538,10 @@ function VerParte({ id, datos, onVolver }) {
         </button>
       </div>
       <dl className="ficha">
-        <dt>Obra</dt>
-        <dd>{obra?.nombre || '—'}</dd>
         <dt>Cliente</dt>
         <dd>{parte.cliente || '—'}</dd>
         <dt>Ubicación</dt>
-        <dd>{obra?.ubicacion || '—'}</dd>
+        <dd>{parte.ubicacion || obra?.ubicacion || obra?.nombre || '—'}</dd>
         <dt>Centro de costo</dt>
         <dd>{centros.rows.find((c) => c.id === parte.centro_costo_id)?.codigo || '—'}</dd>
         <dt>Equipo</dt>

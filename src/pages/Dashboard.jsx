@@ -165,9 +165,9 @@ export default function Dashboard({ ir }) {
                 <li key={p.id}>
                   <span className="ult-fecha">{fmtFecha(p.fecha)}</span>
                   <span className="ult-txt">
-                    <strong>{obra(p.obra_id)?.nombre || p.cliente || 'Sin obra'}</strong>
+                    <strong>{p.ubicacion || obra(p.obra_id)?.nombre || 'Sin ubicación'}</strong>
                     <small>
-                      {equipo(p.equipo_id)?.nombre || '—'} · {personasDe([p.id])} personas
+                      {p.cliente ? `${p.cliente} · ` : ''}{equipo(p.equipo_id)?.nombre || '—'} · {personasDe([p.id])} personas
                     </small>
                   </span>
                 </li>
