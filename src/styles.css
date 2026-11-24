@@ -288,3 +288,15 @@ tr.clickable { cursor: pointer; }
 /* ---------- Flechas de ingreso / egreso ---------- */
 .stock-sub .sube { color: var(--verde); font-weight: 700; }
 .stock-sub .baja { color: var(--rojo); font-weight: 700; }
+
+/* ---------- Ingresar / Crear cuenta ---------- */
+.login-tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--celeste-claro); border-radius: 10px; padding: 4px; gap: 4px; }
+.login-tabs button { border: 0; background: transparent; font: inherit; font-weight: 700; font-size: 14px; color: var(--azul-2); padding: 8px; border-radius: 8px; cursor: pointer; }
+.login-tabs button.on { background: #fff; color: var(--azul); box-shadow: 0 1px 3px rgba(28, 56, 103, .15); }
+.login-nota { text-align: center; margin: -4px 0 0; }
+.login p { margin: 0; }
+tr.fila-pendiente td { background: #fff7e0; }
+.toggle.rol button.on.pend { border-color: #e0b24a; color: #8a5a00; background: #fff7e0; }
+.toggle.rol { flex-wrap: wrap; }
+.side-nav button { display: flex; align-items: center; justify-content: space-between; }
+.badge { background: #f2a900; color: #14294d; font-size: 12px; font-weight: 800; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; display: inline-grid; place-items: center; }

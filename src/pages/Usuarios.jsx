@@ -31,20 +31,30 @@ export default function Usuarios() {
   }
 
   const editores = rows.filter((r) => r.rol === 'editor').length
+  const jefes = rows.filter((r) => r.rol === 'jefe_obra').length
+  const pendientes = rows.filter((r) => r.rol === 'pendiente')
+  const orden = { pendiente: 0, editor: 1, jefe_obra: 2 }
+  const lista = [...rows].sort((a, b) => (orden[a.rol] ?? 3) - (orden[b.rol] ?? 3) || (a.email || '').localeCompare(b.email || ''))
 
   return (
     <section className="card">
       <div className="card-head">
         <h3>Usuarios y permisos</h3>
         <span className="muted small">
-          {editores} pueden editar todo · {rows.length - editores} jefes de obra
+          {editores} pueden editar todo · {jefes} jefes de obra · {pendientes.length} pendientes
         </span>
       </div>
       <p className="muted small" style={{ marginTop: 0 }}>
         <strong>Puede editar todo:</strong> carga, modifica y borra cualquier dato. <strong>Jefe de obra:</strong> carga
-        partes diarios con sus fotos; el resto lo ve y puede descargar Excel, pero no lo modifica. Los usuarios nuevos se
-        crean en Supabase (Authentication → Users) y aparecen acá como jefe de obra.
+        partes diarios con sus fotos y ve el resto sin modificarlo. <strong>Sin acceso:</strong> cuentas nuevas creadas
+        desde la pantalla de ingreso, que todavía no ven nada hasta que las apruebes.
       </p>
+      {pendientes.length > 0 && (
+        <p className="aviso">
+          {pendientes.length === 1 ? 'Hay 1 cuenta nueva' : `Hay ${pendientes.length} cuentas nuevas`} esperando
+          aprobación. Elegí “Jefe de obra” o “Puede editar todo” para darles acceso.
+        </p>
+      )}
       {msg && <p className="error">{msg}</p>}
       {cargando ? (
         <p className="muted">Cargando…</p>
@@ -59,8 +69,8 @@ export default function Usuarios() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((p) => (
-                <tr key={p.id}>
+              {lista.map((p) => (
+                <tr key={p.id} className={p.rol === 'pendiente' ? 'fila-pendiente' : ''}>
                   <td data-label="Email">
                     {p.email} {p.id === userId && <span className="pill tu">vos</span>}
                   </td>
@@ -84,12 +94,21 @@ export default function Usuarios() {
                       </button>
                       <button
                         type="button"
-                        className={p.rol !== 'editor' ? 'on lector' : ''}
+                        className={p.rol === 'jefe_obra' ? 'on lector' : ''}
                         disabled={guardando === p.id || p.id === userId}
                         title={p.id === userId ? 'No podés quitarte tu propio permiso' : ''}
                         onClick={() => cambiar(p, { rol: 'jefe_obra' })}
                       >
                         Jefe de obra
+                      </button>
+                      <button
+                        type="button"
+                        className={p.rol === 'pendiente' ? 'on pend' : ''}
+                        disabled={guardando === p.id || p.id === userId}
+                        title="Sin acceso hasta que se apruebe"
+                        onClick={() => cambiar(p, { rol: 'pendiente' })}
+                      >
+                        Sin acceso
                       </button>
                     </div>
                   </td>

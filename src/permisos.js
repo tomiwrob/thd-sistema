@@ -3,6 +3,7 @@ import { createContext, useContext } from 'react'
 export const ROLES = {
   editor: 'Puede editar todo',
   jefe_obra: 'Jefe de obra',
+  pendiente: 'Pendiente',
 }
 
 export const PermisosContext = createContext({ puedeEditar: true, puedeCargarPartes: true, rol: 'editor', userId: null })
