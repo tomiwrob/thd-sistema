@@ -28,6 +28,7 @@ export default function Usuarios() {
     setGuardando(null)
     if (error) return setMsg(error.message)
     setRows((rs) => rs.map((r) => (r.id === p.id ? { ...r, ...cambios } : r)))
+    window.dispatchEvent(new Event('perfiles-cambiaron'))
   }
 
   const editores = rows.filter((r) => r.rol === 'editor').length

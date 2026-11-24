@@ -48,6 +48,12 @@ export default function App() {
 
   // Aviso para los editores: cuentas nuevas esperando aprobación
   const [pendientes, setPendientes] = useState(0)
+  const [cambiosPerfiles, setCambiosPerfiles] = useState(0)
+  useEffect(() => {
+    const avisar = () => setCambiosPerfiles((n) => n + 1)
+    window.addEventListener('perfiles-cambiaron', avisar)
+    return () => window.removeEventListener('perfiles-cambiaron', avisar)
+  }, [])
   useEffect(() => {
     if (perfil?.rol !== 'editor') return
     supabase
@@ -55,7 +61,7 @@ export default function App() {
       .select('id', { count: 'exact', head: true })
       .eq('rol', 'pendiente')
       .then(({ count }) => setPendientes(count || 0))
-  }, [perfil?.rol, seccion])
+  }, [perfil?.rol, seccion, cambiosPerfiles])
 
   if (!configurado) return <FaltaConfig />
   if (session === undefined) return <div className="center muted">Cargando…</div>
