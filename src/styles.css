@@ -300,3 +300,13 @@ tr.fila-pendiente td { background: #fff7e0; }
 .toggle.rol { flex-wrap: wrap; }
 .side-nav button { display: flex; align-items: center; justify-content: space-between; }
 .badge { background: #f2a900; color: #14294d; font-size: 12px; font-weight: 800; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; display: inline-grid; place-items: center; }
+
+/* ---------- Edición en la misma fila ---------- */
+tr.fila-edicion td.celda-edicion { padding: 8px 0; background: transparent; }
+tr.fila-edicion:hover td { background: transparent; }
+td.celda-edicion .form-grid { margin: 0; }
+@media (max-width: 760px) {
+  tr.fila-edicion { padding: 0; border: 0; }
+  td.celda-edicion { display: block; padding: 0; }
+  td.celda-edicion::before { content: none; }
+}

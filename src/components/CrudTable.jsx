@@ -12,13 +12,13 @@ export default function CrudTable({ title, table, fields, fixed = {}, order = 'i
   const puedeEditar = usePuedeEditar()
   const { rows, loading, error, reload } = useRows(table, { order, ascending, filter: fixed })
   const vacio = () => Object.fromEntries(fields.map((f) => [f.key, f.default ?? '']))
-  const [form, setForm] = useState(vacio)
-  const [editId, setEditId] = useState(null)
-  const [msg, setMsg] = useState(null)
-  const [guardando, setGuardando] = useState(false)
+  const [form, setForm] = useState(vacio) // alta (formulario de arriba)
   const [abierto, setAbierto] = useState(false)
-
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+  const [editId, setEditId] = useState(null) // fila que se está editando
+  const [editForm, setEditForm] = useState({})
+  const [msg, setMsg] = useState(null)
+  const [editMsg, setEditMsg] = useState(null)
+  const [guardando, setGuardando] = useState(false)
 
   const convertir = (f, v) => {
     if (v === '' || v === undefined) return null
@@ -26,33 +26,42 @@ export default function CrudTable({ title, table, fields, fixed = {}, order = 'i
     if (f.type === 'select' && f.options?.length && typeof f.options[0].value === 'number') return Number(v)
     return v
   }
+  const armarDatos = (valores) => {
+    const datos = { ...fixed }
+    for (const f of fields) datos[f.key] = convertir(f, valores[f.key])
+    return datos
+  }
 
-  async function guardar(e) {
+  async function agregar(e) {
     e.preventDefault()
     setGuardando(true)
     setMsg(null)
-    const datos = { ...fixed }
-    for (const f of fields) datos[f.key] = convertir(f, form[f.key])
-    const res = editId
-      ? await supabase.from(table).update(datos).eq('id', editId)
-      : await supabase.from(table).insert(datos)
+    const { error } = await supabase.from(table).insert(armarDatos(form))
     setGuardando(false)
-    if (res.error) {
-      setMsg(traducirError(res.error))
-      return
-    }
+    if (error) return setMsg(traducirError(error))
     setForm(vacio())
-    setEditId(null)
     setAbierto(false)
+    await reload()
+    onChange?.()
+  }
+
+  async function guardarEdicion(e) {
+    e.preventDefault()
+    setGuardando(true)
+    setEditMsg(null)
+    const { error } = await supabase.from(table).update(armarDatos(editForm)).eq('id', editId)
+    setGuardando(false)
+    if (error) return setEditMsg(traducirError(error))
+    setEditId(null)
     await reload()
     onChange?.()
   }
 
   function editar(r) {
     setEditId(r.id)
-    setForm(Object.fromEntries(fields.map((f) => [f.key, r[f.key] ?? ''])))
-    setAbierto(true)
-    setMsg(null)
+    setEditForm(Object.fromEntries(fields.map((f) => [f.key, r[f.key] ?? ''])))
+    setEditMsg(null)
+    setAbierto(false)
   }
 
   async function borrar(r) {
@@ -65,12 +74,23 @@ export default function CrudTable({ title, table, fields, fixed = {}, order = 'i
     }
   }
 
-  function cancelar() {
+  function abrirAlta() {
     setEditId(null)
     setForm(vacio())
-    setAbierto(false)
     setMsg(null)
+    setAbierto(true)
   }
+
+  const campos = (valores, setValores) =>
+    fields.map((f) => (
+      <label key={f.key} className={f.type === 'textarea' ? 'full' : ''}>
+        <span>
+          {f.label}
+          {f.required && ' *'}
+        </span>
+        <Campo f={f} value={valores[f.key]} onChange={(v) => setValores((x) => ({ ...x, [f.key]: v }))} />
+      </label>
+    ))
 
   const mostrar = (f, r) => {
     const v = r[f.key]
@@ -87,28 +107,20 @@ export default function CrudTable({ title, table, fields, fixed = {}, order = 'i
       <div className="card-head">
         <h3>{title}</h3>
         {!abierto && puedeEditar && (
-          <button className="btn" onClick={() => setAbierto(true)}>
+          <button className="btn" onClick={abrirAlta}>
             + Agregar
           </button>
         )}
       </div>
 
       {abierto && (
-        <form className="form-grid" onSubmit={guardar}>
-          {fields.map((f) => (
-            <label key={f.key} className={f.type === 'textarea' ? 'full' : ''}>
-              <span>
-                {f.label}
-                {f.required && ' *'}
-              </span>
-              <Campo f={f} value={form[f.key]} onChange={(v) => set(f.key, v)} />
-            </label>
-          ))}
+        <form className="form-grid" onSubmit={agregar}>
+          {campos(form, setForm)}
           <div className="form-actions full">
             <button className="btn primary" disabled={guardando}>
-              {guardando ? 'Guardando…' : editId ? 'Guardar cambios' : 'Guardar'}
+              {guardando ? 'Guardando…' : 'Guardar'}
             </button>
-            <button type="button" className="btn ghost" onClick={cancelar}>
+            <button type="button" className="btn ghost" onClick={() => setAbierto(false)}>
               Cancelar
             </button>
           </div>
@@ -133,32 +145,52 @@ export default function CrudTable({ title, table, fields, fixed = {}, order = 'i
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className={onVer ? 'clickable' : ''} onClick={onVer ? () => onVer(r) : undefined}>
-                  {visibles.map((f) => (
-                    <td key={f.key} data-label={f.label}>
-                      {mostrar(f, r)}
+              {rows.map((r) =>
+                r.id === editId ? (
+                  <tr key={r.id} className="fila-edicion">
+                    <td colSpan={visibles.length + 1} className="celda-edicion">
+                      <form className="form-grid editando" onSubmit={guardarEdicion}>
+                        <p className="full editando-titulo">Editando</p>
+                        {campos(editForm, setEditForm)}
+                        {editMsg && <p className="error full">{editMsg}</p>}
+                        <div className="form-actions full">
+                          <button className="btn primary" disabled={guardando}>
+                            {guardando ? 'Guardando…' : 'Guardar cambios'}
+                          </button>
+                          <button type="button" className="btn ghost" onClick={() => setEditId(null)}>
+                            Cancelar
+                          </button>
+                        </div>
+                      </form>
                     </td>
-                  ))}
-                  <td className="acciones" onClick={(e) => e.stopPropagation()}>
-                    {onVer && (
-                      <button className="btn small primary" onClick={() => onVer(r)}>
-                        {verLabel}
-                      </button>
-                    )}
-                    {puedeEditar && (
-                      <>
-                        <button className="btn small ghost" onClick={() => editar(r)}>
-                          Editar
+                  </tr>
+                ) : (
+                  <tr key={r.id} className={onVer ? 'clickable' : ''} onClick={onVer ? () => onVer(r) : undefined}>
+                    {visibles.map((f) => (
+                      <td key={f.key} data-label={f.label}>
+                        {mostrar(f, r)}
+                      </td>
+                    ))}
+                    <td className="acciones" onClick={(e) => e.stopPropagation()}>
+                      {onVer && (
+                        <button className="btn small primary" onClick={() => onVer(r)}>
+                          {verLabel}
                         </button>
-                        <button className="btn small danger" onClick={() => borrar(r)}>
-                          Borrar
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                      )}
+                      {puedeEditar && (
+                        <>
+                          <button className="btn small ghost" onClick={() => editar(r)}>
+                            Editar
+                          </button>
+                          <button className="btn small danger" onClick={() => borrar(r)}>
+                            Borrar
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ),
+              )}
             </tbody>
           </table>
         </div>
