@@ -96,7 +96,10 @@ export default function CrudTable({ title, table, fields, fixed = {}, order = 'i
     const v = r[f.key]
     if (v === null || v === undefined || v === '') return '—'
     if (f.type === 'date') return fmtFecha(v)
-    if (f.type === 'select') return f.options?.find((o) => String(o.value) === String(v))?.label ?? v
+    if (f.type === 'select') {
+      const o = f.options?.find((x) => String(x.value) === String(v))
+      return o ? o.corto ?? o.label : v
+    }
     return v
   }
 

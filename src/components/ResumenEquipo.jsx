@@ -29,7 +29,12 @@ export default function ResumenEquipo({ equipoId, onClose }) {
         supabase.from('herramientas').select('*').eq('equipo_id', equipoId).order('nombre'),
         supabase.from('epp').select('cantidad').eq('equipo_id', equipoId),
       ])
+      const idsChoferes = [...new Set((vehiculos.data || []).map((v) => v.chofer_id).filter(Boolean))]
+      const choferes = idsChoferes.length
+        ? (await supabase.from('personal').select('id,apellido,nombre').in('id', idsChoferes)).data || []
+        : []
       setD({
+        choferes,
         equipo,
         centro: centro.data,
         personal: personal.data || [],
@@ -41,6 +46,11 @@ export default function ResumenEquipo({ equipoId, onClose }) {
     })()
   }, [equipoId])
 
+  const chofer = (v) => {
+    const p = d?.choferes.find((x) => x.id === v.chofer_id)
+    return p ? `${p.apellido}, ${p.nombre}` : ''
+  }
+
   function exportar() {
     exportarExcel(`Personal_${d.equipo.nombre}.xlsx`, {
       Personal: d.personal.map((p) => ({
@@ -51,7 +61,12 @@ export default function ResumenEquipo({ equipoId, onClose }) {
         Equipo: d.equipo.nombre,
         'Centro de costo': d.centro?.codigo || '',
       })),
-      Vehículos: d.vehiculos.map((v) => ({ Marca: v.marca, Modelo: v.modelo || '', Patente: v.patente || '' })),
+      Vehículos: d.vehiculos.map((v) => ({
+        Marca: v.marca,
+        Modelo: v.modelo || '',
+        Patente: v.patente || '',
+        Chofer: chofer(v),
+      })),
     })
   }
 
@@ -125,6 +140,7 @@ export default function ResumenEquipo({ equipoId, onClose }) {
                         <th>Marca</th>
                         <th>Modelo</th>
                         <th>Patente</th>
+                        <th>Chofer</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -133,6 +149,7 @@ export default function ResumenEquipo({ equipoId, onClose }) {
                           <td data-label="Marca">{v.marca}</td>
                           <td data-label="Modelo">{v.modelo || '—'}</td>
                           <td data-label="Patente"><strong>{v.patente || '—'}</strong></td>
+                          <td data-label="Chofer">{chofer(v) || '—'}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -14,12 +14,26 @@ export default function Administracion() {
   const [verEquipo, setVerEquipo] = useState(null)
   const centros = useRows('centros_costo', { order: 'codigo' })
   const equipos = useRows('equipos', { order: 'nombre' })
+  const personal = useRows('personal', { order: 'apellido' })
 
   const optCentros = opciones(centros.rows, (c) => `${c.codigo} · ${c.nombre}`)
   const optEquipos = opciones(equipos.rows, (e) => {
     const c = centros.rows.find((x) => x.id === e.centro_costo_id)
     return c ? `${e.nombre} (${c.codigo})` : e.nombre
   })
+
+  // Choferes: todo el personal, primero los que tienen la función "Chofer"
+  const esChofer = (p) => /chofer/i.test(p.funcion || '')
+  const optChoferes = [...personal.rows]
+    .sort((a, b) => esChofer(b) - esChofer(a) || `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`))
+    .map((p) => {
+      const e = equipos.rows.find((x) => x.id === p.equipo_id)
+      return {
+        value: p.id,
+        label: `${p.apellido}, ${p.nombre}${p.funcion ? ` · ${p.funcion}` : ''}${e ? ` (${e.nombre})` : ''}`,
+        corto: `${p.apellido}, ${p.nombre}`,
+      }
+    })
 
   return (
     <div>
@@ -72,6 +86,7 @@ export default function Administracion() {
           title="Personal"
           table="personal"
           order="apellido"
+          onChange={personal.reload}
           fields={[
             { key: 'apellido', label: 'Apellido', required: true },
             { key: 'nombre', label: 'Nombre', required: true },
@@ -92,6 +107,7 @@ export default function Administracion() {
             { key: 'modelo', label: 'Modelo' },
             { key: 'patente', label: 'Patente' },
             { key: 'equipo_id', label: 'Equipo', type: 'select', options: optEquipos },
+            { key: 'chofer_id', label: 'Chofer', type: 'select', options: optChoferes },
           ]}
         />
       )}

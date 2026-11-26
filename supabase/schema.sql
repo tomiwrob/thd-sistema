@@ -35,6 +35,7 @@ create table if not exists vehiculos (
   marca text not null,
   modelo text,
   patente text,
+  chofer_id bigint references personal(id) on delete set null,
   created_at timestamptz default now()
 );
 
